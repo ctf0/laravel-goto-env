@@ -48,8 +48,10 @@ export function activate(context: ExtensionContext) {
                             let editor = window.activeTextEditor
                             let range = getTextPosition(query.replace('query=', ''), editor.document)
 
-                            editor.selection = new Selection(range.start, range.end)
-                            editor.revealRange(range, 2)
+                            if (range) {
+                                editor.selection = new Selection(range.start, range.end)
+                                editor.revealRange(range, 2)
+                            }
                         }, 100)
                     })
             }
