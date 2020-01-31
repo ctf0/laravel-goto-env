@@ -5,6 +5,7 @@ import {
     TextDocument,
     DocumentLink,
     Position,
+    env,
     window,
     Range
 } from "vscode"
@@ -23,18 +24,13 @@ export default class LinkProvider implements vsDocumentLinkProvider {
 
             if (result != null) {
                 for (let found of result) {
-                    let files = await util.getFilePaths(found, doc)
+                    let file = await util.getFilePath(found, doc)
+                    let start = new Position(line.lineNumber, txt.indexOf(found))
+                    let end = start.translate(0, found.length)
 
-                    if (files.length) {
-                        let start = new Position(line.lineNumber, txt.indexOf(found))
-                        let end = start.translate(0, found.length)
-
-                        for (const file of files) {
-                            let documentlink = new DocumentLink(new Range(start, end), file.fileUri)
-                            documentlink.tooltip = file.showPath
-                            documentLinks.push(documentlink)
-                        }
-                    }
+                    let documentlink = new DocumentLink(new Range(start, end), file.fileUri)
+                    documentlink.tooltip = file.showPath
+                    documentLinks.push(documentlink)
                 }
             }
         }
