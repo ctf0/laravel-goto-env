@@ -2,7 +2,7 @@
     "name": "laravel-goto-env",
     "displayName": "Laravel goto env",
     "description": "Quick jump to env",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "publisher": "ctf0",
     "engines": {
         "vscode": "^1.41.0"
@@ -21,10 +21,32 @@
     "activationEvents": [
         "onLanguage:php",
         "onLanguage:blade",
-        "onUri"
+        "onUri",
+        "workspaceContains:**/.env"
     ],
     "main": "./out/src/extension",
-    "contributes": {},
+    "contributes": {
+        "configuration": {
+            "type": "object",
+            "title": "Laravel Goto Env",
+            "properties": {
+                "laravel_goto_env.methods": {
+                    "type": "array",
+                    "default": [
+                        "env",
+                        "Env::get",
+                        "Env::set"
+                    ],
+                    "items": {
+                        "type": "string"
+                    },
+                    "minItems": 1,
+                    "uniqueItems": true,
+                    "description": "methods to search for"
+                }
+            }
+        }
+    },
     "scripts": {
         "vscode:prepublish": "yarn run compile",
         "compile": "tsc -p ./",
@@ -44,7 +66,6 @@
         "vscode-test": "^1.2.2"
     },
     "dependencies": {
-        "fast-glob": "^3.1.1",
         "lodash.debounce": "^4.0.8"
     }
 }

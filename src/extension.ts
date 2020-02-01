@@ -2,78 +2,65 @@
 
 import {
     languages,
-    ExtensionContext,
     window,
-    commands,
-    Uri,
-    Range,
-    Selection
+    workspace
 } from 'vscode'
 import LinkProvider from './providers/linkProvider'
+import * as util from './util'
 
 const debounce = require('lodash.debounce')
 let providers = []
+let envFile
 
-export function activate(context: ExtensionContext) {
-    setTimeout(() => {
-        if (window.activeTextEditor) {
-            initProvider()
-        }
+export async function activate() {
+    envFile = await workspace.findFiles('**/.env', null, 1)
 
-        window.onDidChangeTextEditorVisibleRanges(
-            debounce(function (e) {
-                clearAll()
+    if (envFile.length) {
+        util.readConfig()
+        envFile = envFile[0]
+
+        // config
+        workspace.onDidChangeConfiguration(async (e) => {
+            if (e.affectsConfiguration('laravel_goto_env')) {
+                util.readConfig()
+            }
+        })
+
+        // links
+        setTimeout(() => {
+            if (window.activeTextEditor) {
                 initProvider()
-            }, 250)
-        )
+            }
 
-        window.onDidChangeActiveTextEditor(
-            debounce(function (editor) {
-                if (editor) {
+            window.onDidChangeTextEditorVisibleRanges(
+                debounce(function (e) {
                     clearAll()
                     initProvider()
-                }
-            }, 250)
-        )
-    }, 2000)
+                }, 250)
+            )
 
-    window.registerUriHandler({
-        handleUri(uri) {
-            let { authority, path, query } = uri
+            window.onDidChangeActiveTextEditor(
+                debounce(function (editor) {
+                    if (editor) {
+                        clearAll()
+                        initProvider()
+                    }
+                }, 250)
+            )
+        }, 2000)
 
-            if (authority == 'ctf0.laravel-goto-env') {
-                commands.executeCommand('vscode.openFolder', Uri.file(path))
-                    .then(() => {
-                        setTimeout(() => {
-                            let editor = window.activeTextEditor
-                            let range = getTextPosition(query.replace('query=', ''), editor.document)
+        // scroll
+        util.scrollToText()
 
-                            if (range) {
-                                editor.selection = new Selection(range.start, range.end)
-                                editor.revealRange(range, 2)
-                            }
-                        }, 100)
-                    })
-            }
-        }
-    })
-}
-
-function getTextPosition(searchFor, doc) {
-    const regx = new RegExp(searchFor)
-    const match = regx.exec(doc.getText())
-
-    if (match) {
-        return new Range(
-            doc.positionAt(match.index),
-            doc.positionAt(match.index + match[0].length)
-        )
+        // .env content changes
+        util.listenForEnvFileChanges(envFile, debounce)
+    } else {
+        window.showErrorMessage('".env" is not found in project root')
     }
 }
 
-
 function initProvider() {
-    providers.push(languages.registerDocumentLinkProvider(['php', 'blade'], new LinkProvider()))
+    providers.push(languages.registerDocumentLinkProvider(['php', 'blade'], new LinkProvider(envFile)))
 }
 
 function clearAll() {
