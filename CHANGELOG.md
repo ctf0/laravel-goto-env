@@ -18,3 +18,7 @@
 ## 0.0.5
 
 - add key to env if not found
+
+## 0.0.6
+
+- add autocomplete

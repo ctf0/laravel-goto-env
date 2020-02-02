@@ -54,16 +54,15 @@ export function scrollToText() {
 
                             if (range) {
                                 editor.selection = new Selection(range.start, range.end)
-                                editor.revealRange(range, 2)
+                                editor.revealRange(range, 3)
 
                                 if (fragment) {
                                     editor.edit((edit) => {
-                                        edit.insert(range.start, `${fragment}=`)
+                                        edit.insert(range.start, `\n${fragment}=`)
                                     })
                                 }
                             }
-
-                        }, 100)
+                        }, 500)
                     })
             }
         }
@@ -83,7 +82,7 @@ function getTextPosition(searchFor, doc) {
 
 /* Content ------------------------------------------------------------------ */
 const fs = require("fs")
-let envFileContents = ''
+export let envFileContents = ''
 
 export async function listenForEnvFileChanges(envFile, debounce) {
     await getEnvFileContent(envFile)
