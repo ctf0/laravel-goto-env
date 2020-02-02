@@ -7,20 +7,12 @@ import {
     commands,
     window,
     workspace,
+    Position,
     Selection
 } from 'vscode'
 
-const fs = require("fs")
-let envFileContents = ''
-export let methods
-
-export function readConfig() {
-    methods = workspace.getConfiguration('laravel_goto_env').methods
-    methods = methods.join('|')
-}
-
 export function getFilePath(envPath, text) {
-    let info = text.match(new RegExp(/['"](.*?)['"]/))[1]
+    let info = text.replace(/['"]/g, '')
     let editor = `${env.uriScheme}://file`
     let tt = getKeyLine(info)
 
@@ -28,29 +20,49 @@ export function getFilePath(envPath, text) {
         ? {
             tooltip: tt,
             fileUri: Uri
-                .parse(`${editor}/${envPath}?query=${info}`)
-                .with({ authority: 'ctf0.laravel-goto-env' })
+                .parse(`${editor}/${envPath}`)
+                .with({ authority: 'ctf0.laravel-goto-env', query: info })
         }
-        : false
+        : {
+            tooltip: `add "${info}" To .env`,
+            fileUri: Uri
+                .parse(`${editor}/${envPath}`)
+                .with({ authority: 'ctf0.laravel-goto-env', fragment: info })
+        }
 }
 
 /* Scroll ------------------------------------------------------------------- */
 export function scrollToText() {
     window.registerUriHandler({
         handleUri(uri) {
-            let { authority, path, query } = uri
+            let { authority, path, query, fragment } = uri
 
             if (authority == 'ctf0.laravel-goto-env') {
                 commands.executeCommand('vscode.openFolder', Uri.file(path))
                     .then(() => {
                         setTimeout(() => {
                             let editor = window.activeTextEditor
-                            let range = getTextPosition(query.replace('query=', ''), editor.document)
+                            let { document } = editor
+                            let range
+
+                            if (fragment) {
+                                let pos = new Position(document.lineCount + 1, 0)
+                                range = document.validateRange(new Range(pos, pos))
+                            } else {
+                                range = getTextPosition(query, document)
+                            }
 
                             if (range) {
                                 editor.selection = new Selection(range.start, range.end)
                                 editor.revealRange(range, 2)
+
+                                if (fragment) {
+                                    editor.edit((edit) => {
+                                        edit.insert(range.start, `${fragment}=`)
+                                    })
+                                }
                             }
+
                         }, 100)
                     })
             }
@@ -58,7 +70,7 @@ export function scrollToText() {
     })
 }
 
-export function getTextPosition(searchFor, doc) {
+function getTextPosition(searchFor, doc) {
     const regex = new RegExp(searchFor)
     const match = regex.exec(doc.getText())
 
@@ -70,6 +82,9 @@ export function getTextPosition(searchFor, doc) {
 }
 
 /* Content ------------------------------------------------------------------ */
+const fs = require("fs")
+let envFileContents = ''
+
 export async function listenForEnvFileChanges(envFile, debounce) {
     await getEnvFileContent(envFile)
 
@@ -88,8 +103,17 @@ function getKeyLine(k) {
     return match ? match[0] : null
 }
 
-export function getEnvFileContent(envFile) {
+function getEnvFileContent(envFile) {
     return fs.readFile(envFile.path, 'utf8', (err, data) => {
         envFileContents = data
     })
+}
+
+/* Config ------------------------------------------------------------------- */
+const escapeStringRegexp = require('escape-string-regexp')
+export let methods: any = ''
+
+export function readConfig() {
+    methods = workspace.getConfiguration('laravel_goto_env').methods
+    methods = methods.map((e) => escapeStringRegexp(e)).join('|')
 }

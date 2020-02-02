@@ -14,3 +14,7 @@
 - show value on hover
 - links will show only if the key is actually in .env
 - smaller size
+
+## 0.0.5
+
+- add key to env if not found
