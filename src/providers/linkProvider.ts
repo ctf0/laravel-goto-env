@@ -7,7 +7,7 @@ import {
     Position,
     window,
     Range
-} from "vscode"
+} from 'vscode'
 import * as util from '../util'
 
 export default class LinkProvider implements vsDocumentLinkProvider {
@@ -21,31 +21,35 @@ export default class LinkProvider implements vsDocumentLinkProvider {
     }
 
     async provideDocumentLinks(doc: TextDocument): Promise<DocumentLink[]> {
-        let range = window.activeTextEditor.visibleRanges[0]
-        let reg = new RegExp(`(?<=(${this.regex})\\()['"](.*?)['"]`, 'g')
-        let documentLinks = []
+        let editor = window.activeTextEditor
 
-        for (let i = range.start.line; i <= range.end.line; i++) {
-            let line = doc.lineAt(i)
-            let txt = line.text
-            let result = txt.match(reg)
+        if (editor) {
+            let range = editor.visibleRanges[0]
+            let reg = new RegExp(`(?<=(${this.regex})\\()['"](.*?)['"]`, 'g')
+            let documentLinks = []
 
-            if (result != null) {
-                for (let found of result) {
-                    let file = await util.getFilePath(this.envPath, found)
+            for (let i = range.start.line; i <= range.end.line; i++) {
+                let line = doc.lineAt(i)
+                let txt = line.text
+                let result = txt.match(reg)
 
-                    if (file) {
-                        let start = new Position(line.lineNumber, txt.indexOf(found))
-                        let end = start.translate(0, found.length)
+                if (result != null) {
+                    for (let found of result) {
+                        let file = await util.getFilePath(this.envPath, found)
 
-                        let documentlink = new DocumentLink(new Range(start, end), file.fileUri)
-                        documentlink.tooltip = file.tooltip
-                        documentLinks.push(documentlink)
+                        if (file) {
+                            let start = new Position(line.lineNumber, txt.indexOf(found))
+                            let end = start.translate(0, found.length)
+
+                            let documentlink = new DocumentLink(new Range(start, end), file.fileUri)
+                            documentlink.tooltip = file.tooltip
+                            documentLinks.push(documentlink)
+                        }
                     }
                 }
             }
-        }
 
-        return documentLinks
+            return documentLinks
+        }
     }
 }
