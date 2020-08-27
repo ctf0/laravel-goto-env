@@ -5,16 +5,17 @@ import {
     window,
     workspace
 } from 'vscode'
-import LinkProvider from './providers/linkProvider'
 import CompletionItemProvider from './providers/CompletionItemProvider'
-import * as util from './util'
+import LinkProvider           from './providers/linkProvider'
+import * as util              from './util'
 
 const debounce = require('lodash.debounce')
 let providers = []
 let envFile
 
+
 export async function activate() {
-    envFile = await workspace.findFiles('**/.env', null, 1)
+    envFile = await workspace.findFiles('.env', null, 1)
 
     if (envFile.length) {
         util.readConfig()
@@ -55,8 +56,6 @@ export async function activate() {
 
         // .env content changes
         util.listenForEnvFileChanges(envFile, debounce)
-    } else {
-        window.showErrorMessage('".env" is not found in project root')
     }
 }
 

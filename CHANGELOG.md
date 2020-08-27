@@ -22,3 +22,9 @@
 ## 0.0.6
 
 - add autocomplete
+
+## 0.0.8
+
+- search for `.env` in ws root only instead of everywhere
+- fix freezing the editor when a `php / blade` file is opened, now it only works if the ws have a `artisan` file
+- remove the `.env not found` error
