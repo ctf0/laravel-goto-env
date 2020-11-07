@@ -28,3 +28,7 @@
 - search for `.env` in ws root only instead of everywhere
 - fix freezing the editor when a `php / blade` file is opened, now it only works if the ws have a `artisan` file
 - remove the `.env not found` error
+
+## 0.0.9
+
+- remove env suggestion as its not effective as expected

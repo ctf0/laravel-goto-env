@@ -1,14 +1,14 @@
 'use strict'
 
 import {
-    Uri,
-    env,
-    Range,
     commands,
-    window,
-    workspace,
+    env,
     Position,
-    Selection
+    Range,
+    Selection,
+    Uri,
+    window,
+    workspace
 } from 'vscode'
 
 export function getFilePath(envPath, text) {
@@ -21,13 +21,13 @@ export function getFilePath(envPath, text) {
             tooltip: tt,
             fileUri: Uri
                 .parse(`${editor}/${envPath}`)
-                .with({ authority: 'ctf0.laravel-goto-env', query: info })
+                .with({authority: 'ctf0.laravel-goto-env', query: info})
         }
         : {
             tooltip: `add "${info}" To .env`,
             fileUri: Uri
                 .parse(`${editor}/${envPath}`)
-                .with({ authority: 'ctf0.laravel-goto-env', fragment: info })
+                .with({authority: 'ctf0.laravel-goto-env', fragment: info})
         }
 }
 
@@ -35,14 +35,14 @@ export function getFilePath(envPath, text) {
 export function scrollToText() {
     window.registerUriHandler({
         handleUri(uri) {
-            let { authority, path, query, fragment } = uri
+            let {authority, path, query, fragment} = uri
 
             if (authority == 'ctf0.laravel-goto-env') {
                 commands.executeCommand('vscode.openFolder', Uri.file(path))
                     .then(() => {
                         setTimeout(() => {
                             let editor = window.activeTextEditor
-                            let { document } = editor
+                            let {document} = editor
                             let range
 
                             if (fragment) {
@@ -81,7 +81,7 @@ function getTextPosition(searchFor, doc) {
 }
 
 /* Content ------------------------------------------------------------------ */
-const fs = require("fs")
+const fs = require('fs')
 export let envFileContents = ''
 
 export async function listenForEnvFileChanges(envFile, debounce) {
@@ -110,9 +110,10 @@ function getEnvFileContent(envFile) {
 
 /* Config ------------------------------------------------------------------- */
 const escapeStringRegexp = require('escape-string-regexp')
-export let methods: any = ''
+export let methods: string = ''
 
 export function readConfig() {
-    methods = workspace.getConfiguration('laravel_goto_env').methods
-    methods = methods.map((e) => escapeStringRegexp(e)).join('|')
+    let config = workspace.getConfiguration('laravel_goto_env')
+
+    methods = config.methods.map((e) => escapeStringRegexp(e)).join('|')
 }

@@ -5,9 +5,8 @@ import {
     window,
     workspace
 } from 'vscode'
-import CompletionItemProvider from './providers/CompletionItemProvider'
-import LinkProvider           from './providers/linkProvider'
-import * as util              from './util'
+import LinkProvider from './providers/linkProvider'
+import * as util    from './util'
 
 const debounce = require('lodash.debounce')
 let providers = []
@@ -61,7 +60,6 @@ export async function activate() {
 
 function initProvider() {
     providers.push(languages.registerDocumentLinkProvider(['php', 'blade'], new LinkProvider(envFile)))
-    providers.push(languages.registerCompletionItemProvider(['php', 'blade'], new CompletionItemProvider()))
 }
 
 function clearAll() {
