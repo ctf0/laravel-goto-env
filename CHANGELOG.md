@@ -32,3 +32,7 @@
 ## 0.0.9
 
 - remove env suggestion as its not effective as expected
+
+## 0.1.0
+
+- fix package settings name

@@ -22,7 +22,7 @@ export async function activate() {
 
         // config
         workspace.onDidChangeConfiguration(async (e) => {
-            if (e.affectsConfiguration('laravel_goto_env')) {
+            if (e.affectsConfiguration(util.PACKAGE_NAME)) {
                 util.readConfig()
             }
         })

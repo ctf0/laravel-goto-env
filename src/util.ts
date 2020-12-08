@@ -18,14 +18,14 @@ export function getFilePath(envPath, text) {
 
     return tt
         ? {
-            tooltip: tt,
-            fileUri: Uri
+            tooltip : tt,
+            fileUri : Uri
                 .parse(`${editor}/${envPath}`)
                 .with({authority: 'ctf0.laravel-goto-env', query: info})
         }
         : {
-            tooltip: `add "${info}" To .env`,
-            fileUri: Uri
+            tooltip : `add "${info}" To .env`,
+            fileUri : Uri
                 .parse(`${editor}/${envPath}`)
                 .with({authority: 'ctf0.laravel-goto-env', fragment: info})
         }
@@ -34,8 +34,8 @@ export function getFilePath(envPath, text) {
 /* Scroll ------------------------------------------------------------------- */
 export function scrollToText() {
     window.registerUriHandler({
-        handleUri(uri) {
-            let {authority, path, query, fragment} = uri
+        handleUri(provider) {
+            let {authority, path, query, fragment} = provider
 
             if (authority == 'ctf0.laravel-goto-env') {
                 commands.executeCommand('vscode.openFolder', Uri.file(path))
@@ -110,10 +110,11 @@ function getEnvFileContent(envFile) {
 
 /* Config ------------------------------------------------------------------- */
 const escapeStringRegexp = require('escape-string-regexp')
+export const PACKAGE_NAME = 'laravelGotoEnv'
 export let methods: string = ''
 
 export function readConfig() {
-    let config = workspace.getConfiguration('laravel_goto_env')
+    let config = workspace.getConfiguration(PACKAGE_NAME)
 
     methods = config.methods.map((e) => escapeStringRegexp(e)).join('|')
 }
