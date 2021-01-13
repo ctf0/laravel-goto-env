@@ -2,57 +2,50 @@
 
 import {
     DocumentLink,
-    DocumentLinkProvider as vsDocumentLinkProvider,
-    Position,
-    Range,
+    DocumentLinkProvider,
     TextDocument,
     window
 } from 'vscode'
 import * as util from '../util'
 
-export default class LinkProvider implements vsDocumentLinkProvider {
-
+export default class LinkProvider implements DocumentLinkProvider {
     envPath
-    regex
+    methods
 
     constructor(envFile) {
         this.envPath = envFile.path
-        this.regex = util.methods
+        this.methods = util.methods
     }
 
     async provideDocumentLinks(doc: TextDocument): Promise<DocumentLink[]> {
         let editor = window.activeTextEditor
 
         if (editor) {
-            let range = editor.visibleRanges[0]
-            let documentLinks = []
+            const text = doc.getText()
+            const regex = new RegExp(`(?<=(${this.methods})\\()['"](.*?)['"]`, 'g')
+            let links = []
+            let matches = text.matchAll(regex)
 
-            if (Object.entries(range).length > 0) {
-                let reg = new RegExp(`(?<=(${this.regex})\\()['"](.*?)['"]`, 'g')
+            for (const match of matches) {
+                let found = match[0]
+                let files = await util.getFilePath(this.envPath, found)
 
-                for (let i = range.start.line; i <= range.end.line; i++) {
-                    let line = doc.lineAt(i)
-                    let txt = line.text
-                    let result = txt.match(reg)
+                if (files.length) {
+                    const range = doc.getWordRangeAtPosition(
+                        doc.positionAt(match.index),
+                        regex
+                    )
 
-                    if (result != null) {
-                        for (let found of result) {
-                            let file = await util.getFilePath(this.envPath, found)
+                    for (const file of files) {
+                        let documentlink = new DocumentLink(range, file.fileUri)
+                        documentlink.tooltip = file.tooltip
 
-                            if (file) {
-                                let start = new Position(line.lineNumber, txt.indexOf(found))
-                                let end = start.translate(0, found.length)
-
-                                let documentlink = new DocumentLink(new Range(start, end), file.fileUri)
-                                documentlink.tooltip = file.tooltip
-                                documentLinks.push(documentlink)
-                            }
-                        }
+                        links.push(documentlink)
                     }
                 }
             }
 
-            return documentLinks
+            return links
         }
     }
 }

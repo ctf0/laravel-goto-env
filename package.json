@@ -2,7 +2,7 @@
     "name": "laravel-goto-env",
     "displayName": "Laravel Goto Env",
     "description": "Quick jump to env",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "publisher": "ctf0",
     "engines": {
         "vscode": "^1.51.0"
@@ -20,7 +20,10 @@
     ],
     "activationEvents": [
         "onUri",
-        "workspaceContains:artisan"
+        "workspaceContains:artisan",
+        "onLanguage:php",
+        "onLanguage:blade",
+        "onStartupFinished"
     ],
     "main": "./out/src/extension",
     "contributes": {

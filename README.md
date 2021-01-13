@@ -1,6 +1,6 @@
 # Laravel Goto Env
 
-- package search in workspace/project root only
+- package search for `.env` in workspace/project root only
 
 ## Features
 

@@ -11,24 +11,48 @@ import {
     workspace
 } from 'vscode'
 
+const fs = require('fs')
+const escapeStringRegexp = require('escape-string-regexp')
+
+/* -------------------------------------------------------------------------- */
+let cache_store_link = []
+
 export function getFilePath(envPath, text) {
     let info = text.replace(/['"]/g, '')
     let editor = `${env.uriScheme}://file`
-    let tt = getKeyLine(info)
+    let list = checkCache(cache_store_link, info)
 
-    return tt
-        ? {
-            tooltip : tt,
-            fileUri : Uri
-                .parse(`${editor}/${envPath}`)
-                .with({authority: 'ctf0.laravel-goto-env', query: info})
-        }
-        : {
-            tooltip : `add "${info}" To .env`,
-            fileUri : Uri
-                .parse(`${editor}/${envPath}`)
-                .with({authority: 'ctf0.laravel-goto-env', fragment: info})
-        }
+    if (!list.length) {
+        let tt = getKeyLine(info)
+
+        list.push(
+            tt
+                ? {
+                    tooltip : tt,
+                    fileUri : Uri
+                        .parse(`${editor}/${envPath}`)
+                        .with({authority: 'ctf0.laravel-goto-env', query: info})
+                }
+                : {
+                    tooltip : `add "${info}" To .env`,
+                    fileUri : Uri
+                        .parse(`${editor}/${envPath}`)
+                        .with({authority: 'ctf0.laravel-goto-env', fragment: info})
+                }
+        )
+
+        saveCache(cache_store_link, info, list)
+    }
+
+    return list
+}
+
+function getKeyLine(k) {
+    let match = envFileContents.match(new RegExp(`^${k}.*`, 'm'))
+
+    return match
+        ? match[0].replace(`${k}=`, '')
+        : null
 }
 
 /* Scroll ------------------------------------------------------------------- */
@@ -81,35 +105,50 @@ function getTextPosition(searchFor, doc) {
 }
 
 /* Content ------------------------------------------------------------------ */
-const fs = require('fs')
 export let envFileContents = ''
 
 export async function listenForEnvFileChanges(envFile, debounce) {
-    await getEnvFileContent(envFile)
+    try {
+        await getEnvFileContent(envFile)
 
-    let watcher = workspace.createFileSystemWatcher('**/*.env')
+        let watcher = workspace.createFileSystemWatcher('**/*.env')
 
-    watcher.onDidChange(
-        debounce(async function (e) {
-            await getEnvFileContent(envFile)
-        }, 500)
-    )
+        watcher.onDidChange(
+            debounce(async function (e) {
+                await getEnvFileContent(envFile)
+            }, 500)
+        )
+    } catch (error) {
+        // console.error(error);
+    }
 }
 
-function getKeyLine(k) {
-    let match = envFileContents.match(new RegExp(`^${k}.*`, 'm'))
-
-    return match ? match[0] : null
-}
-
-function getEnvFileContent(envFile) {
+async function getEnvFileContent(envFile) {
     return fs.readFile(envFile.path, 'utf8', (err, data) => {
         envFileContents = data
     })
 }
 
+/* Helpers ------------------------------------------------------------------ */
+
+function checkCache(cache_store, text) {
+    let check = cache_store.find((e) => e.key == text)
+
+    return check ? check.val : []
+}
+
+function saveCache(cache_store, text, val) {
+    checkCache(cache_store, text).length
+        ? false
+        : cache_store.push({
+            key : text,
+            val : val
+        })
+
+    return val
+}
+
 /* Config ------------------------------------------------------------------- */
-const escapeStringRegexp = require('escape-string-regexp')
 export const PACKAGE_NAME = 'laravelGotoEnv'
 export let methods: string = ''
 

@@ -36,3 +36,7 @@
 ## 0.1.0
 
 - fix package settings name
+
+## 0.2.0
+
+- better & quicker api
