@@ -21,9 +21,9 @@ export default class LinkProvider implements DocumentLinkProvider {
         let editor = window.activeTextEditor
 
         if (editor) {
-            const text = doc.getText()
+            const text  = doc.getText()
             const regex = new RegExp(`(?<=(${this.methods})\\()['"](.*?)['"]`, 'g')
-            let links = []
+            let links   = []
             let matches = text.matchAll(regex)
 
             for (const match of matches) {
@@ -37,7 +37,7 @@ export default class LinkProvider implements DocumentLinkProvider {
                     )
 
                     for (const file of files) {
-                        let documentlink = new DocumentLink(range, file.fileUri)
+                        let documentlink     = new DocumentLink(range, file.fileUri)
                         documentlink.tooltip = file.tooltip
 
                         links.push(documentlink)

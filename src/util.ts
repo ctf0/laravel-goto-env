@@ -11,16 +11,16 @@ import {
     workspace
 } from 'vscode'
 
-const fs = require('fs')
+const fs                 = require('fs')
 const escapeStringRegexp = require('escape-string-regexp')
 
 /* -------------------------------------------------------------------------- */
 let cache_store_link = []
 
 export function getFilePath(envPath, text) {
-    let info = text.replace(/['"]/g, '')
+    let info   = text.replace(/['"]/g, '')
     let editor = `${env.uriScheme}://file`
-    let list = checkCache(cache_store_link, info)
+    let list   = checkCache(cache_store_link, info)
 
     if (!list.length) {
         let tt = getKeyLine(info)
@@ -65,13 +65,13 @@ export function scrollToText() {
                 commands.executeCommand('vscode.openFolder', Uri.file(path))
                     .then(() => {
                         setTimeout(() => {
-                            let editor = window.activeTextEditor
+                            let editor     = window.activeTextEditor
                             let {document} = editor
                             let range
 
                             if (fragment) {
                                 let pos = new Position(document.lineCount + 1, 0)
-                                range = document.validateRange(new Range(pos, pos))
+                                range   = document.validateRange(new Range(pos, pos))
                             } else {
                                 range = getTextPosition(query, document)
                             }
@@ -114,7 +114,7 @@ export async function listenForEnvFileChanges(envFile, debounce) {
         let watcher = workspace.createFileSystemWatcher('**/*.env')
 
         watcher.onDidChange(
-            debounce(async function (e) {
+            debounce(async function(e) {
                 await getEnvFileContent(envFile)
             }, 500)
         )
