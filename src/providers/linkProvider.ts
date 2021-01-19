@@ -27,15 +27,14 @@ export default class LinkProvider implements DocumentLinkProvider {
             let matches = text.matchAll(regex)
 
             for (const match of matches) {
-                let found = match[0]
-                let files = await util.getFilePath(this.envPath, found)
+                let found   = match[0]
+                let files   = await util.getFilePath(this.envPath, found)
+                const range = doc.getWordRangeAtPosition(
+                    doc.positionAt(match.index),
+                    regex
+                )
 
-                if (files.length) {
-                    const range = doc.getWordRangeAtPosition(
-                        doc.positionAt(match.index),
-                        regex
-                    )
-
+                if (files.length && range) {
                     for (const file of files) {
                         let documentlink     = new DocumentLink(range, file.fileUri)
                         documentlink.tooltip = file.tooltip

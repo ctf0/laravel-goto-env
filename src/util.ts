@@ -12,6 +12,8 @@ import {
 } from 'vscode'
 
 const fs                 = require('fs')
+const path               = require('path')
+const sep                = path.sep
 const escapeStringRegexp = require('escape-string-regexp')
 
 /* -------------------------------------------------------------------------- */
@@ -30,13 +32,13 @@ export function getFilePath(envPath, text) {
                 ? {
                     tooltip : tt,
                     fileUri : Uri
-                        .parse(`${editor}/${envPath}`)
+                        .parse(`${editor}${sep}${envPath}`)
                         .with({authority: 'ctf0.laravel-goto-env', query: info})
                 }
                 : {
                     tooltip : `add "${info}" To .env`,
                     fileUri : Uri
-                        .parse(`${editor}/${envPath}`)
+                        .parse(`${editor}${sep}${envPath}`)
                         .with({authority: 'ctf0.laravel-goto-env', fragment: info})
                 }
         )

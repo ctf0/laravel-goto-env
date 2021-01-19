@@ -40,3 +40,7 @@
 ## 0.2.0
 
 - better & quicker api
+
+## 0.2.2
+
+- fix wrong path seperator for windows
