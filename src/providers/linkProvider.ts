@@ -9,11 +9,11 @@ import {
 import * as util from '../util'
 
 export default class LinkProvider implements DocumentLinkProvider {
-    envPath
+    envFiles
     methods
 
-    constructor(envFile) {
-        this.envPath = envFile.path
+    constructor(envFiles) {
+        this.envFiles = envFiles
         this.methods = util.methods
     }
 
@@ -28,18 +28,29 @@ export default class LinkProvider implements DocumentLinkProvider {
 
             for (const match of matches) {
                 let found   = match[0]
-                let files   = await util.getFilePath(this.envPath, found)
                 const range = doc.getWordRangeAtPosition(
                     doc.positionAt(match.index),
                     regex
                 )
 
+                let files = []
+
+                for (const file of this.envFiles) {
+                    let path = file.path
+                    files.push({
+                        path: path,
+                        data: await util.getFilePath(path, found)
+                    })
+                }
+
                 if (files.length && range) {
                     for (const file of files) {
-                        let documentlink     = new DocumentLink(range, file.fileUri)
-                        documentlink.tooltip = file.tooltip
+                        for (const link of file.data) {
+                            let documentlink     = new DocumentLink(range, link.fileUri)
+                            documentlink.tooltip = link.tooltip
 
-                        links.push(documentlink)
+                            links.push(documentlink)
+                        }
                     }
                 }
             }

@@ -1,20 +1,23 @@
 'use strict'
 
 import {languages, window, workspace} from 'vscode'
-import LinkProvider                   from './providers/linkProvider'
-import * as util                      from './util'
+import LinkProvider from './providers/linkProvider'
+import * as util from './util'
+import { debounce } from 'lodash'
 
-const debounce = require('lodash.debounce')
 let providers  = []
-let envFile
+let envFiles = []
 
 export async function activate() {
-    envFile = await workspace.findFiles('.env', null, 1)
+    util.readConfig()
 
-    if (envFile.length) {
-        util.readConfig()
-        envFile = envFile[0]
+    let promises = util.envFiles.map(async (file) => await workspace.findFiles(file, null, 1))
+    envFiles = await Promise.all(promises)
+    envFiles = envFiles
+                    .filter((e)=>e.length)
+                    .map((e)=>e[0])
 
+    if (envFiles.length) {
         // config
         workspace.onDidChangeConfiguration(async (e) => {
             if (e.affectsConfiguration(util.PACKAGE_NAME)) {
@@ -33,12 +36,12 @@ export async function activate() {
         util.scrollToText()
 
         // .env content changes
-        util.listenForEnvFileChanges(envFile, debounce)
+        util.listenForEnvFileChanges(envFiles, debounce)
     }
 }
 
 const initProviders = debounce(function() {
-    providers.push(languages.registerDocumentLinkProvider(['php', 'blade'], new LinkProvider(envFile)))
+    providers.push(languages.registerDocumentLinkProvider(['php', 'blade'], new LinkProvider(envFiles)))
 }, 250)
 
 function clearAll() {

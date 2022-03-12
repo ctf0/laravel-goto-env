@@ -7,6 +7,4 @@
 - direct scroll to key in .env
 - show key value on hover
 - append key to .env if not found
-
-## TODO
 - support multiple env files ex.`.env.local, etc..`

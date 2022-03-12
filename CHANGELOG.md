@@ -44,3 +44,7 @@
 ## 0.2.2
 
 - fix wrong path seperator for windows
+
+## 0.2.3
+
+- support multiple env files ex.`.env.local, etc..`

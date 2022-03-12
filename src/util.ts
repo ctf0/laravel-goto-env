@@ -17,40 +17,42 @@ const sep                = path.sep
 const escapeStringRegexp = require('escape-string-regexp')
 
 /* -------------------------------------------------------------------------- */
-let cache_store_link = []
+let cache_store = []
 
 export function getFilePath(envPath, text) {
     let info   = text.replace(/['"]/g, '')
     let editor = `${env.uriScheme}://file`
-    let list   = checkCache(cache_store_link, info)
+    let list   = checkCache(envPath, info)
+    let fileNameOnly = path.basename(envPath)
 
     if (!list.length) {
-        let tt = getKeyLine(info)
+        let tooltip = getKeyLine(envPath,info)
 
         list.push(
-            tt
+            tooltip
                 ? {
-                    tooltip : tt,
+                    tooltip : `${tooltip} (${fileNameOnly})`,
                     fileUri : Uri
                         .parse(`${editor}${sep}${envPath}`)
                         .with({authority: 'ctf0.laravel-goto-env', query: info})
                 }
                 : {
-                    tooltip : `add "${info}" To .env`,
+                    tooltip : `add "${info}" To (${fileNameOnly})`,
                     fileUri : Uri
                         .parse(`${editor}${sep}${envPath}`)
                         .with({authority: 'ctf0.laravel-goto-env', fragment: info})
                 }
         )
 
-        saveCache(cache_store_link, info, list)
+        saveCache(envPath, info, list)
     }
 
     return list
 }
 
-function getKeyLine(k) {
-    let match = envFileContents.match(new RegExp(`^${k}.*`, 'm'))
+function getKeyLine(envPath,k) {
+    let file = envFileContents.find((e)=>e.path == envPath)
+    let match = file.data.match(new RegExp(`^${k}.*`, 'm'))
 
     return match
         ? match[0].replace(`${k}=`, '')
@@ -107,55 +109,61 @@ function getTextPosition(searchFor, doc) {
 }
 
 /* Content ------------------------------------------------------------------ */
-export let envFileContents = ''
+export let envFileContents = []
 
-export async function listenForEnvFileChanges(envFile, debounce) {
+export async function listenForEnvFileChanges(files, debounce) {
     try {
-        await getEnvFileContent(envFile)
+        for (const file of files) {
+            await getEnvFileContent(file.path)
 
-        let watcher = workspace.createFileSystemWatcher('**/*.env')
+            let watcher = workspace.createFileSystemWatcher(`**/*${file}`)
 
-        watcher.onDidChange(
-            debounce(async function(e) {
-                await getEnvFileContent(envFile)
-            }, 500)
-        )
+            watcher.onDidChange(
+                debounce(async function(e) {
+                    await getEnvFileContent(file)
+                }, 500)
+            )
+        }
     } catch (error) {
         // console.error(error);
     }
 }
 
-async function getEnvFileContent(envFile) {
-    return fs.readFile(envFile.path, 'utf8', (err, data) => {
-        envFileContents = data
+async function getEnvFileContent(path) {
+    return fs.readFile(path, 'utf8', (err, data) => {
+        envFileContents.push({
+            path: path,
+            data: data
+        })
     })
 }
 
 /* Helpers ------------------------------------------------------------------ */
 
-function checkCache(cache_store, text) {
-    let check = cache_store.find((e) => e.key == text)
+function checkCache(envPath, text) {
+    let check = cache_store.find((e) => e.key == text && e.path == envPath)
 
     return check ? check.val : []
 }
 
-function saveCache(cache_store, text, val) {
-    checkCache(cache_store, text).length
-        ? false
-        : cache_store.push({
-            key : text,
-            val : val
-        })
-
-    return val
+function saveCache(envPath, text, val) {
+    cache_store.push({
+        key : text,
+        val : val,
+        path: envPath
+    })
 }
 
 /* Config ------------------------------------------------------------------- */
 export const PACKAGE_NAME = 'laravelGotoEnv'
 export let methods: string = ''
+export let newKeysFile: string = ''
+export let envFiles: any = []
 
 export function readConfig() {
     let config = workspace.getConfiguration(PACKAGE_NAME)
 
     methods = config.methods.map((e) => escapeStringRegexp(e)).join('|')
+    envFiles = config.envFiles
+    newKeysFile = config.newKeysFile
 }
