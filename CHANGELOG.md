@@ -48,3 +48,7 @@
 ## 0.2.3
 
 - support multiple env files ex.`.env.local, etc..`
+
+## 0.2.4
+
+- use the correct file opening command
