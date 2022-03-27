@@ -26,20 +26,21 @@ export function getFilePath(envPath, text) {
     let fileNameOnly = path.basename(envPath)
 
     if (!list.length) {
-        let tooltip = getKeyLine(envPath,info)
+        let tooltip = getKeyLine(envPath, info)
+        let normalizedPath = editor + normalizePath(`${sep}${envPath}`)
 
         list.push(
             tooltip
                 ? {
                     tooltip : `${tooltip} (${fileNameOnly})`,
                     fileUri : Uri
-                        .parse(`${editor}${sep}${envPath}`)
+                        .parse(normalizedPath)
                         .with({authority: 'ctf0.laravel-goto-env', query: info})
                 }
                 : {
                     tooltip : `add "${info}" To (${fileNameOnly})`,
                     fileUri : Uri
-                        .parse(`${editor}${sep}${envPath}`)
+                        .parse(normalizedPath)
                         .with({authority: 'ctf0.laravel-goto-env', fragment: info})
                 }
         )
@@ -48,6 +49,13 @@ export function getFilePath(envPath, text) {
     }
 
     return list
+}
+
+function normalizePath(path)
+{
+    return path
+            .replace(/\/+/g, '/')
+            .replace(/\+/g, '\\')
 }
 
 function getKeyLine(envPath,k) {
