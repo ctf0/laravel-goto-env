@@ -10,45 +10,48 @@ import {
     window,
     workspace
 } from 'vscode'
+import escapeStringRegexp from 'escape-string-regexp';
 
-const fs                 = require('fs')
-const path               = require('path')
-const sep                = path.sep
-const escapeStringRegexp = require('escape-string-regexp')
+const fs = require('fs')
+const path = require('path')
+const sep = path.sep
+export const cmndName = 'lge.openFile'
+const scheme = `command:${cmndName}`
 
 /* -------------------------------------------------------------------------- */
 let cache_store = []
 
 export function getFilePath(envPath, text) {
     let info   = text.replace(/['"]/g, '')
-    let editor = `${env.uriScheme}://file`
     let list   = checkCache(envPath, info)
     let fileNameOnly = path.basename(envPath)
 
     if (!list.length) {
         let tooltip = getKeyLine(envPath, info)
-        let normalizedPath = editor + normalizePath(`${sep}${envPath}`)
+        let obj = { path: normalizePath(`${sep}${envPath}`), query: info }
 
-        list.push(
-            tooltip
-                ? {
-                    tooltip : `${tooltip} (${fileNameOnly})`,
-                    fileUri : Uri
-                        .parse(normalizedPath)
-                        .with({authority: 'ctf0.laravel-goto-env', query: info})
-                }
-                : {
-                    tooltip : `add "${info}" To (${fileNameOnly})`,
-                    fileUri : Uri
-                        .parse(normalizedPath)
-                        .with({authority: 'ctf0.laravel-goto-env', fragment: info})
-                }
-        )
+        if (tooltip) {
+            tooltip = `${tooltip} (${fileNameOnly})`
+        } else {
+            tooltip = `add "${info}" To (${fileNameOnly})`
+            Object.assign(obj, { add: true })
+        }
+
+        let args = prepareArgs(obj);
+
+        list.push({
+            tooltip : tooltip,
+            fileUri : Uri.parse(`${scheme}?${args}`)
+        })
 
         saveCache(envPath, info, list)
     }
 
     return list
+}
+
+function prepareArgs(args: object){
+    return encodeURIComponent(JSON.stringify([args]));
 }
 
 function normalizePath(path)
@@ -68,41 +71,38 @@ function getKeyLine(envPath,k) {
 }
 
 /* Scroll ------------------------------------------------------------------- */
-export function scrollToText() {
-    window.registerUriHandler({
-        handleUri(provider) {
-            let {authority, path, query, fragment} = provider
+export function scrollToText(args) {
+    if (args !== undefined) {
+        let { path, query, add } = args
+        let addNew = add !== undefined
 
-            if (authority == 'ctf0.laravel-goto-env') {
-                commands.executeCommand('vscode.open', Uri.file(path))
-                    .then(() => {
-                        setTimeout(() => {
-                            let editor     = window.activeTextEditor
-                            let {document} = editor
-                            let range
+        commands.executeCommand('vscode.open', Uri.file(path))
+            .then(() => {
+                setTimeout(() => {
+                    let editor     = window.activeTextEditor
+                    let {document} = editor
+                    let range
 
-                            if (fragment) {
-                                let pos = new Position(document.lineCount + 1, 0)
-                                range   = document.validateRange(new Range(pos, pos))
-                            } else {
-                                range = getTextPosition(query, document)
-                            }
+                    if (addNew) {
+                        let pos = new Position(document.lineCount + 1, 0)
+                        range   = document.validateRange(new Range(pos, pos))
+                    } else {
+                        range = getTextPosition(query, document)
+                    }
 
-                            if (range) {
-                                editor.selection = new Selection(range.start, range.end)
-                                editor.revealRange(range, 3)
+                    if (range) {
+                        editor.selection = new Selection(range.start, range.end)
+                        editor.revealRange(range, 3)
 
-                                if (fragment) {
-                                    editor.edit((edit) => {
-                                        edit.insert(range.start, `\n${fragment}=`)
-                                    })
-                                }
-                            }
-                        }, 500)
-                    })
-            }
-        }
-    })
+                        if (addNew) {
+                            editor.edit((edit) => {
+                                edit.insert(range.start, `\n${query}=`)
+                            })
+                        }
+                    }
+                }, 500)
+            })
+    }
 }
 
 function getTextPosition(searchFor, doc) {

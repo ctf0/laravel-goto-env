@@ -1,6 +1,6 @@
 'use strict'
 
-import {languages, window, workspace} from 'vscode'
+import {languages, window, workspace, commands} from 'vscode'
 import LinkProvider from './providers/linkProvider'
 import * as util from './util'
 import { debounce } from 'lodash'
@@ -8,7 +8,7 @@ import { debounce } from 'lodash'
 let providers  = []
 let envFiles = []
 
-export async function activate() {
+export async function activate({subscriptions}) {
     util.readConfig()
 
     let promises = util.envFiles.map(async (file) => await workspace.findFiles(file, null, 1))
@@ -33,7 +33,8 @@ export async function activate() {
         })
 
         // scroll
-        util.scrollToText()
+        subscriptions.push(commands.registerCommand(util.cmndName, util.scrollToText))
+
 
         // .env content changes
         util.listenForEnvFileChanges(envFiles, debounce)
