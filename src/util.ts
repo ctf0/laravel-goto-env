@@ -1,16 +1,15 @@
 'use strict'
 
+import escapeStringRegexp from 'escape-string-regexp';
 import {
     commands,
-    env,
+    DocumentSymbol,
     Position,
     Range,
-    Selection,
-    Uri,
+    Selection, TextEditorRevealType, Uri,
     window,
     workspace
-} from 'vscode'
-import escapeStringRegexp from 'escape-string-regexp';
+} from 'vscode';
 
 const fs = require('fs')
 const path = require('path')
@@ -22,8 +21,8 @@ const scheme = `command:${cmndName}`
 let cache_store = []
 
 export function getFilePath(envPath, text) {
-    let info   = text.replace(/['"]/g, '')
-    let list   = checkCache(envPath, info)
+    let info = text.replace(/['"]/g, '')
+    let list = checkCache(envPath, info)
     let fileNameOnly = path.basename(envPath)
 
     if (!list.length) {
@@ -40,8 +39,8 @@ export function getFilePath(envPath, text) {
         let args = prepareArgs(obj);
 
         list.push({
-            tooltip : tooltip,
-            fileUri : Uri.parse(`${scheme}?${args}`)
+            tooltip: tooltip,
+            fileUri: Uri.parse(`${scheme}?${args}`)
         })
 
         saveCache(envPath, info, list)
@@ -50,19 +49,18 @@ export function getFilePath(envPath, text) {
     return list
 }
 
-function prepareArgs(args: object){
+function prepareArgs(args: object) {
     return encodeURIComponent(JSON.stringify([args]));
 }
 
-function normalizePath(path)
-{
+function normalizePath(path) {
     return path
-            .replace(/\/+/g, '/')
-            .replace(/\+/g, '\\')
+        .replace(/\/+/g, '/')
+        .replace(/\+/g, '\\')
 }
 
-function getKeyLine(envPath,k) {
-    let file = envFileContents.find((e)=>e.path == envPath)
+function getKeyLine(envPath, k) {
+    let file = envFileContents.find((e) => e.path == envPath)
     let match = file.data.match(new RegExp(`^${k}.*`, 'm'))
 
     return match
@@ -77,44 +75,34 @@ export function scrollToText(args) {
         let addNew = add !== undefined
 
         commands.executeCommand('vscode.open', Uri.file(path))
-            .then(() => {
-                setTimeout(() => {
-                    let editor     = window.activeTextEditor
-                    let {document} = editor
-                    let range
+            .then(async () => {
+                let editor = window.activeTextEditor
+                let { document } = editor
+
+                let symbols: DocumentSymbol[] = await commands.executeCommand("vscode.executeDocumentSymbolProvider", document.uri)
+                let range: any
+
+                if (addNew) {
+                    let pos = new Position(document.lineCount + 1, 0)
+                    range = document.validateRange(new Range(pos, pos))
+                } else {
+                    range = symbols.find((symbol) => symbol.name == query)?.location.range
+                }
+
+                if (range) {
+                    editor.selection = new Selection(range.start, range.end)
+                    editor.revealRange(range, TextEditorRevealType.InCenter)
 
                     if (addNew) {
-                        let pos = new Position(document.lineCount + 1, 0)
-                        range   = document.validateRange(new Range(pos, pos))
-                    } else {
-                        range = getTextPosition(query, document)
+                        editor.edit((edit) => {
+                            edit.insert(range.start, `\n${query}=`)
+                        })
                     }
-
-                    if (range) {
-                        editor.selection = new Selection(range.start, range.end)
-                        editor.revealRange(range, 3)
-
-                        if (addNew) {
-                            editor.edit((edit) => {
-                                edit.insert(range.start, `\n${query}=`)
-                            })
-                        }
-                    }
-                }, 500)
+                }
             })
     }
 }
 
-function getTextPosition(searchFor, doc) {
-    const regex = new RegExp(searchFor)
-    const match = regex.exec(doc.getText())
-
-    if (match) {
-        let pos = doc.positionAt(match.index + match[0].length)
-
-        return new Range(pos, pos)
-    }
-}
 
 /* Content ------------------------------------------------------------------ */
 export let envFileContents = []
@@ -127,7 +115,7 @@ export async function listenForEnvFileChanges(files, debounce) {
             let watcher = workspace.createFileSystemWatcher(`**/*${file}`)
 
             watcher.onDidChange(
-                debounce(async function(e) {
+                debounce(async function (e) {
                     await getEnvFileContent(file)
                 }, 500)
             )
@@ -156,8 +144,8 @@ function checkCache(envPath, text) {
 
 function saveCache(envPath, text, val) {
     cache_store.push({
-        key : text,
-        val : val,
+        key: text,
+        val: val,
         path: envPath
     })
 }

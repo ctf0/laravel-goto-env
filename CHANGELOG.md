@@ -61,3 +61,7 @@
 
 - fix link popup not being clickable
 - use a cmnd instead of the uri handler
+
+## 0.4.1
+
+- use symbol provider to navigate to key
