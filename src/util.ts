@@ -61,11 +61,16 @@ function normalizePath(path) {
 
 function getKeyLine(envPath, k) {
     let file = envFileContents.find((e) => e.path == envPath)
-    let match = file.data.match(new RegExp(`^${k}.*`, 'm'))
 
-    return match
-        ? match[0].replace(`${k}=`, '')
-        : null
+    if (file) {
+        let match = file.data.match(new RegExp(`^${k}.*`, 'm'))
+
+        return match
+            ? match[0].replace(`${k}=`, '')
+            : null
+    }
+
+    return null
 }
 
 /* Scroll ------------------------------------------------------------------- */

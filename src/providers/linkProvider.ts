@@ -21,13 +21,13 @@ export default class LinkProvider implements DocumentLinkProvider {
         let editor = window.activeTextEditor
 
         if (editor) {
-            const text  = doc.getText()
+            const text = doc.getText()
             const regex = new RegExp(`(?<=(${this.methods})\\()['"](.*?)['"]`, 'g')
-            let links   = []
+            let links = []
             let matches = text.matchAll(regex)
 
             for (const match of matches) {
-                let found   = match[0]
+                let found = match[0]
                 const range = doc.getWordRangeAtPosition(
                     doc.positionAt(match.index),
                     regex
@@ -45,11 +45,13 @@ export default class LinkProvider implements DocumentLinkProvider {
 
                 if (files.length && range) {
                     for (const file of files) {
-                        for (const link of file.data) {
-                            let documentlink     = new DocumentLink(range, link.fileUri)
-                            documentlink.tooltip = link.tooltip
+                        if (file.data) {
+                            for (const link of file.data) {
+                                let documentlink = new DocumentLink(range, link.fileUri)
+                                documentlink.tooltip = link.tooltip
 
-                            links.push(documentlink)
+                                links.push(documentlink)
+                            }
                         }
                     }
                 }
