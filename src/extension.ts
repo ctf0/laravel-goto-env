@@ -5,8 +5,8 @@ import { commands, languages, window, workspace } from 'vscode';
 import LinkProvider from './providers/linkProvider';
 import * as util from './util';
 
-let providers = [];
-let envFiles = [];
+let providers: any = [];
+let envFiles: any = [];
 
 export async function activate({ subscriptions }) {
     util.readConfig();
@@ -19,22 +19,25 @@ export async function activate({ subscriptions }) {
 
     if (envFiles.length) {
         // config
-        workspace.onDidChangeConfiguration(async (e) => {
-            if (e.affectsConfiguration(util.PACKAGE_NAME)) {
-                util.readConfig();
-            }
-        });
+        subscriptions.push(
+            workspace.onDidChangeConfiguration(async (e) => {
+                if (e.affectsConfiguration(util.PACKAGE_NAME)) {
+                    util.readConfig();
+                }
+            }),
+        );
 
         // links
         initProviders();
-        window.onDidChangeActiveTextEditor(async (e) => {
-            await clearAll();
-            initProviders();
-        });
+        subscriptions.push(
+            window.onDidChangeActiveTextEditor(async (e) => {
+                await clearAll();
+                initProviders();
+            }),
+        );
 
         // scroll
         subscriptions.push(commands.registerCommand(util.CMND_NAME, util.scrollToText));
-
 
         // .env content changes
         util.listenForEnvFileChanges(envFiles, debounce);

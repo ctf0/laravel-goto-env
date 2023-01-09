@@ -1,5 +1,6 @@
 'use strict';
 
+import escapeStringRegexp from 'escape-string-regexp';
 import {
     DocumentLink,
     DocumentLinkProvider,
@@ -19,21 +20,22 @@ export default class LinkProvider implements DocumentLinkProvider {
 
     async provideDocumentLinks(doc: TextDocument): Promise<DocumentLink[]> {
         const editor = window.activeTextEditor;
+        const links: DocumentLink[] = [];
 
         if (editor) {
             const text = doc.getText();
             const regex = new RegExp(`(?<=(${this.methods})\\()['"](.*?)['"]`, 'g');
-            const links = [];
             const matches = text.matchAll(regex);
 
             for (const match of matches) {
-                const found = match[0];
+                const found = match[2];
                 const range = doc.getWordRangeAtPosition(
-                    doc.positionAt(match.index),
-                    regex,
+                    // @ts-ignore
+                    doc.positionAt(match.index + found.length),
+                    new RegExp(escapeStringRegexp(found)),
                 );
 
-                const files = [];
+                const files: any = [];
 
                 for (const file of this.envFiles) {
                     const path = file.path;
@@ -47,7 +49,7 @@ export default class LinkProvider implements DocumentLinkProvider {
                     for (const file of files) {
                         if (file.data) {
                             for (const link of file.data) {
-                                const documentlink = new DocumentLink(range, link.fileUri);
+                                const documentlink: DocumentLink = new DocumentLink(range, link.fileUri);
                                 documentlink.tooltip = link.tooltip;
 
                                 links.push(documentlink);
@@ -56,8 +58,8 @@ export default class LinkProvider implements DocumentLinkProvider {
                     }
                 }
             }
-
-            return links;
         }
+
+        return links;
     }
 }

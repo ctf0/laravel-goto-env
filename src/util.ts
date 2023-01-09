@@ -18,7 +18,7 @@ export const CMND_NAME = 'lge.openFile';
 const SCHEME = `command:${CMND_NAME}`;
 
 /* -------------------------------------------------------------------------- */
-const cache_store = [];
+const cache_store: any = [];
 
 export function getFilePath(envPath, text) {
     const info = text.replace(/['"]/g, '');
@@ -82,26 +82,29 @@ export function scrollToText(args) {
         commands.executeCommand('vscode.open', Uri.file(path))
             .then(async () => {
                 const editor = window.activeTextEditor;
-                const { document } = editor;
 
-                const symbols: DocumentSymbol[] = await commands.executeCommand('vscode.executeDocumentSymbolProvider', document.uri);
-                let range: any;
+                if (editor) {
+                    const { document } = editor;
 
-                if (addNew) {
-                    const pos = new Position(document.lineCount + 1, 0);
-                    range = document.validateRange(new Range(pos, pos));
-                } else {
-                    range = symbols.find((symbol) => symbol.name == query)?.location.range;
-                }
-
-                if (range) {
-                    editor.selection = new Selection(range.start, range.end);
-                    editor.revealRange(range, TextEditorRevealType.InCenter);
+                    const symbols: DocumentSymbol[] = await commands.executeCommand('vscode.executeDocumentSymbolProvider', document.uri);
+                    let range: any;
 
                     if (addNew) {
-                        editor.edit((edit) => {
-                            edit.insert(range.start, `\n${query}=`);
-                        });
+                        const pos = new Position(document.lineCount + 1, 0);
+                        range = document.validateRange(new Range(pos, pos));
+                    } else {
+                        range = symbols.find((symbol) => symbol.name == query)?.range;
+                    }
+
+                    if (range) {
+                        editor.selection = new Selection(range.start, range.end);
+                        editor.revealRange(range, TextEditorRevealType.InCenter);
+
+                        if (addNew) {
+                            editor.edit((edit) => {
+                                edit.insert(range.start, `\n${query}=`);
+                            });
+                        }
                     }
                 }
             });
@@ -110,7 +113,7 @@ export function scrollToText(args) {
 
 
 /* Content ------------------------------------------------------------------ */
-export const envFileContents = [];
+export const envFileContents: any = [];
 
 export async function listenForEnvFileChanges(files, debounce) {
     try {
