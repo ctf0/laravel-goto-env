@@ -1,6 +1,5 @@
-'use strict';
-
 import escapeStringRegexp from 'escape-string-regexp';
+import debounce from 'lodash.debounce';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import {
@@ -39,8 +38,8 @@ export function getFilePath(envPath, text) {
         const args = prepareArgs(obj);
 
         list.push({
-            tooltip : tooltip,
-            fileUri : Uri.parse(`${SCHEME}?${args}`),
+            tooltip,
+            fileUri: Uri.parse(`${SCHEME}?${args}`),
         });
 
         saveCache(envPath, info, list);
@@ -115,17 +114,17 @@ export function scrollToText(args) {
 /* Content ------------------------------------------------------------------ */
 export const envFileContents: any = [];
 
-export async function listenForEnvFileChanges(files, debounce) {
+export async function listenForEnvFileChanges(subscriptions) {
     try {
-        for (const file of files) {
+        for (const file of envFilesPaths) {
             await getEnvFileContent(file.path);
 
             const watcher = workspace.createFileSystemWatcher(`**/*${file}`);
 
-            watcher.onDidChange(
-                debounce(async (e) => {
-                    await getEnvFileContent(file);
-                }, 500),
+            subscriptions.push(
+                watcher.onDidChange(
+                    debounce(async (e) => await getEnvFileContent(file), 500),
+                ),
             );
         }
     } catch (error) {
@@ -136,10 +135,19 @@ export async function listenForEnvFileChanges(files, debounce) {
 async function getEnvFileContent(path) {
     return fs.readFile(path, 'utf8', (err, data) => {
         envFileContents.push({
-            path : path,
-            data : data,
+            path,
+            data,
         });
     });
+}
+
+export let envFilesPaths;
+export async function getEnvFiles() {
+    const promises = envFiles.map(async (file) => await workspace.findFiles(file, null, 1));
+    envFilesPaths = await Promise.all(promises);
+    envFilesPaths = envFilesPaths
+        .filter((e) => e.length)
+        .map((e) => e[0]);
 }
 
 /* Helpers ------------------------------------------------------------------ */
@@ -153,7 +161,7 @@ function checkCache(envPath, text) {
 function saveCache(envPath, text, val) {
     cache_store.push({
         key  : text,
-        val  : val,
+        val,
         path : envPath,
     });
 }

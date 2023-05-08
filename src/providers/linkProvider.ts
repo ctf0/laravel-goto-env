@@ -1,5 +1,3 @@
-'use strict';
-
 import escapeStringRegexp from 'escape-string-regexp';
 import {
     DocumentLink,
@@ -10,11 +8,11 @@ import {
 import * as util from '../util';
 
 export default class LinkProvider implements DocumentLinkProvider {
-    envFiles;
     methods;
+    envFilesPaths;
 
-    constructor(envFiles) {
-        this.envFiles = envFiles;
+    constructor() {
+        this.envFilesPaths = util.envFilesPaths;
         this.methods = util.methods;
     }
 
@@ -37,11 +35,11 @@ export default class LinkProvider implements DocumentLinkProvider {
 
                 const files: any = [];
 
-                for (const file of this.envFiles) {
+                for (const file of this.envFilesPaths) {
                     const path = file.path;
                     files.push({
-                        path : path,
-                        data : await util.getFilePath(path, found),
+                        path,
+                        data: await util.getFilePath(path, found),
                     });
                 }
 

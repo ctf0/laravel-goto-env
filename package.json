@@ -2,7 +2,7 @@
     "name": "laravel-goto-env",
     "displayName": "Laravel Goto Env",
     "description": "Quick jump to env",
-    "version": "0.4.4",
+    "version": "0.4.5",
     "publisher": "ctf0",
     "engines": {
         "vscode": "^1.68.0"
