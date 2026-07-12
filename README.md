@@ -1,3 +1,6 @@
+> Laravel now have this [vscode-laravel](https://marketplace.visualstudio.com/items?itemName=laravel.vscode-laravel)
+
+
 # Laravel Goto Env
 
 - package search for `.env` in workspace/project root only
